@@ -33,5 +33,12 @@ class CovidApi:
 
 		self.dfs[type_data] = df
 
+	def get_data_df(self, type_data):
+		return self.dfs[type_data]
+
+	def get_data_dict(self, type_data):
+		return self.dfs[type_data].to_dict()
+
 	def print_data_head(self, type_data):
 		print(self.dfs[type_data].head())
+
