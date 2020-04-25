@@ -44,11 +44,11 @@ app.layout = html.Div(
         html.Div(
             id="header",
             children=[
-                html.P(
+                html.H2(
                     id="description",
-                    children="Covid-19 dashboard",
+                    children="Covid-19 Pandemic",
                 ),
-            ],
+            ], style={"text-align":"center"}
         ),
         html.Div(
             id="app-container",
@@ -78,8 +78,8 @@ app.layout = html.Div(
                 html.Div(
                     id="choropleth-container",
                     children=[
-                        html.P(
-                            "COVID-19 across the world in {}".format(str(TIME_PLACEHOLDER[0].strftime("%m/%d/%Y"))),
+                        html.H5(
+                            "Total confirmed COVID-19 cases across the world in {}".format(str(TIME_PLACEHOLDER[0].strftime("%m/%d/%Y"))),
                             id="choropleth-title",
                         ),
                         dcc.Graph(
@@ -98,18 +98,36 @@ app.layout = html.Div(
                 html.Div(
                     id="bottom-section",
                     children=[
-                        dcc.Graph(
-                            id="left-graph",
-                            figure=px.line(df2),
+                        html.Div(
+                            id="line-container",
+                            children=[
+                                html.H5(
+                                    "World-wide increase in total cases",
+                                    id="line-title",
+                                ),
+                                dcc.Graph(
+                                    id="left-graph",
+                                    figure=px.line(df2),
+                                ),
+                            ], className="six columns"
                         ),
-                        dcc.Graph(
-                            id="right-graph",
-                            figure=go.Figure(
-                                data=[go.Bar(x=[1, 2, 3], y=[1, 3, 2])],
-                                layout=go.Layout(
-                                    title=go.layout.Title(text="A Figure Specified By A Graph Object")
-                                )
-                            ),
+                        html.Div(
+                            id="bar-container",
+                            children=[
+                                html.H5(
+                                    "Comparison of total cases between countries",
+                                    id="bar-title",
+                                ),
+                                dcc.Graph(
+                                    id="right-graph",
+                                    figure=go.Figure(
+                                        data=[go.Bar(x=[1, 2, 3], y=[1, 3, 2])],
+                                        layout=go.Layout(
+                                            title=go.layout.Title(text="A Figure Specified By A Graph Object")
+                                        )
+                                    ),
+                                ),
+                            ], className="six columns"
                         ),
                     ],
                 ),
