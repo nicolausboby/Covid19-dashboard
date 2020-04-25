@@ -1,8 +1,11 @@
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
+import plotly.express as px
+import plotly.graph_objects as go
 
 import pandas as pd
+import numpy as np
 from urllib.request import urlopen
 import json
 
@@ -10,7 +13,7 @@ from datetime import datetime
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
-# Placeholder and constant
+# Placeholder and constant TODO
 TIME_PLACEHOLDER = [
     datetime(2019, 10, 12),
     datetime(2020, 4, 25),
@@ -29,9 +32,8 @@ server = app.server
 
 # Load Data
 
-df = pd.read_csv('https://gist.githubusercontent.com/chriddyp/5d1ea79569ed194d432e56108a04d188/raw/a9f9e8076b837d541398e999dcbac2b2826a81f8/gdp-life-exp-2007.csv')
-
-
+df = px.data.gapminder() # TODO: replace data
+df2 = pd.DataFrame(np.random.randint(0,100,size=(100, 4)), columns=list('ABCD'))
 
 
 # App Layout
@@ -60,9 +62,9 @@ app.layout = html.Div(
                         ),
                         dcc.Slider(
                             id="time-slider",
-                            min=min(TIME_PLACEHOLDER),
-                            max=max(TIME_PLACEHOLDER),
-                            value=min(TIME_PLACEHOLDER),
+                            min=0,
+                            max=1,
+                            value=0,
                             marks={
                                 str(time.strftime("%m/%d/%Y")): {
                                     "label": str(time.strftime("%m/%d/%Y")),
@@ -74,8 +76,43 @@ app.layout = html.Div(
                     ],
                 ),
                 html.Div(
-                    
-                )
+                    id="choropleth-container",
+                    children=[
+                        html.P(
+                            "COVID-19 across the world in {}".format(str(TIME_PLACEHOLDER[0].strftime("%m/%d/%Y"))),
+                            id="choropleth-title",
+                        ),
+                        dcc.Graph(
+                            id="world-choropleth",
+                            figure=px.scatter_geo(df, 
+                                locations="iso_alpha",
+                                size="pop",
+                                color="continent",
+                                hover_name="country",
+                                animation_frame="year",
+                                projection="natural earth"
+                            ),
+                        ),
+                    ],
+                ),
+                html.Div(
+                    id="bottom-section",
+                    children=[
+                        dcc.Graph(
+                            id="left-graph",
+                            figure=px.line(df2),
+                        ),
+                        dcc.Graph(
+                            id="right-graph",
+                            figure=go.Figure(
+                                data=[go.Bar(x=[1, 2, 3], y=[1, 3, 2])],
+                                layout=go.Layout(
+                                    title=go.layout.Title(text="A Figure Specified By A Graph Object")
+                                )
+                            ),
+                        ),
+                    ],
+                ),
             ],
         ),
     ],
