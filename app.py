@@ -44,11 +44,11 @@ app.layout = html.Div(
         html.Div(
             id="header",
             children=[
-                html.H2(
+                html.H1(
                     id="description",
                     children="Covid-19 Pandemic",
                 ),
-            ], style={"text-align":"center"}
+            ], style={"text-align":"center", "margin-top":"3%"}
         ),
         html.Div(
             id="app-container",
@@ -81,6 +81,9 @@ app.layout = html.Div(
                         html.H5(
                             "Total confirmed COVID-19 cases across the world in {}".format(str(TIME_PLACEHOLDER[0].strftime("%m/%d/%Y"))),
                             id="choropleth-title",
+                        ),
+                        html.P(
+                            "Click on a country to view detailed data on that country"
                         ),
                         dcc.Graph(
                             id="world-choropleth",
@@ -129,9 +132,30 @@ app.layout = html.Div(
                                 ),
                             ], className="six columns"
                         ),
+                    ], style={"margin-top":"3%", "margin-bottom":"3%"}
+                ),
+                html.Div(
+                    id="footer",
+                    children=[
+                        html.Div(
+                            id="footer-message-1",
+                            children=[
+                                html.H2(
+                                    "#StayHome"
+                                ),
+                            ], style={"text-align":"center", "margin-top":"3%", "margin-bottom":"3%"}, className="six columns"
+                        ),
+                        html.Div(
+                            id="footer-message-2",
+                            children=[
+                                html.H2(
+                                    "#StaySafe"
+                                ),
+                            ], style={"text-align":"center", "margin-top":"3%", "margin-bottom":"3%"}, className="six columns"
+                        ),
                     ],
                 ),
-            ],
+            ], style={"margin":"3% 5%"}
         ),
     ],
 )
