@@ -126,7 +126,12 @@ app.layout = html.Div(
                                     figure=go.Figure(
                                         data=[go.Bar(x=[1, 2, 3], y=[1, 3, 2])],
                                         layout=go.Layout(
-                                            title=go.layout.Title(text="A Figure Specified By A Graph Object")
+                                            title=go.layout.Title(text="A Figure Specified By A Graph Object"),
+                                            plot_bgcolor="#23272c",
+                                            paper_bgcolor="#23272c",
+                                            font={
+                                                "color":"#a3a7b0"
+                                            }
                                         )
                                     ),
                                 ),
