@@ -1,23 +1,35 @@
+#
+# LIBRARIES
+#
+
+# Dash
+from dash.dependencies import Input, Output
 import dash
+import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 import plotly.express as px
 import plotly.graph_objects as go
 
+# Utils
 import pandas as pd
 import numpy as np
-from urllib.request import urlopen
-import json
-
 from datetime import datetime
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+# Self-made
+from api_covid import CovidApi
+
+external_stylesheets = [dbc.themes.BOOTSTRAP]
 
 # Placeholder and constant TODO
 TIME_PLACEHOLDER = [
     datetime(2019, 10, 12),
     datetime(2020, 4, 25),
 ]
+
+#
+# MAIN APP
+#
 
 # Initiate server
 app = dash.Dash(
@@ -30,140 +42,172 @@ app = dash.Dash(
 
 server = app.server
 
-# Load Data
+#
+# CONSTANTS
+#
+COLORS = {
+    "background": '#FFFFFF'
+}
 
-df = px.data.gapminder() # TODO: replace data
+#
+# DATASET
+#
+api = CovidApi()
+api.fetch_data(type_data=api.CONFIRMED)
+api.fetch_data(type_data=api.DEATHS)
+api.fetch_data(type_data=api.RECOVERED)
+
 df2 = pd.DataFrame(np.random.randint(0,100,size=(100, 4)), columns=list('ABCD'))
 
 
-# App Layout
-
+#
+# LAYOUT
+#
 app.layout = html.Div(
     id="root",
+    className="container",
+    style={
+        'backgroundColor': COLORS['background'],
+    },
     children=[
         html.Div(
-            id="header",
+            className="row",
             children=[
-                html.H1(
-                    id="description",
-                    children="Covid-19 Pandemic",
-                ),
-            ], style={"text-align":"center", "margin-top":"3%"}
+                html.Div(
+                    className="col-12 col-sm-12",
+                    children=[
+                        dbc.Card(
+                            dbc.CardBody([
+                                html.H4("Covid-19 Pandemic Tracker", className="card-title text-center")
+                            ])
+                        )
+                    ]
+                )
+            ]
         ),
         html.Div(
-            id="app-container",
+            className="row",
             children=[
                 html.Div(
-                    id="top-section",
-                    children=[
-                        html.P(
-                            id="slider-text",
-                            children="Drag the slider to change the time"
-                        ),
-                        dcc.Slider(
-                            id="time-slider",
-                            min=0,
-                            max=1,
-                            value=0,
-                            marks={
-                                str(time.strftime("%m/%d/%Y")): {
-                                    "label": str(time.strftime("%m/%d/%Y")),
-                                    "style": {"color": "#7fafdf"},
-                                }
-                                for time in TIME_PLACEHOLDER
-                            },
-                        ),
-                    ],
-                ),
-                html.Div(
-                    id="choropleth-container",
-                    children=[
-                        html.H5(
-                            "Total confirmed COVID-19 cases across the world in {}".format(str(TIME_PLACEHOLDER[0].strftime("%m/%d/%Y"))),
-                            id="choropleth-title",
-                        ),
-                        html.P(
-                            "Click on a country to view detailed data on that country"
-                        ),
-                        dcc.Graph(
-                            id="world-choropleth",
-                            figure=px.scatter_geo(df, 
-                                locations="iso_alpha",
-                                size="pop",
-                                color="continent",
-                                hover_name="country",
-                                animation_frame="year",
-                                projection="natural earth"
-                            ),
-                        ),
-                    ],
-                ),
-                html.Div(
-                    id="bottom-section",
+                    className="col-12 col-sm-12",
                     children=[
                         html.Div(
-                            id="line-container",
+                            id="choropleth-container",
                             children=[
                                 html.H5(
-                                    "World-wide increase in total cases",
-                                    id="line-title",
+                                    "Total confirmed COVID-19 cases across the world",
+                                    id="choropleth-title"
+                                ),
+                                html.P(
+                                    "Click on a country to view detailed data on that country"
                                 ),
                                 dcc.Graph(
-                                    id="left-graph",
-                                    figure=px.line(df2),
-                                ),
-                            ], className="six columns"
-                        ),
-                        html.Div(
-                            id="bar-container",
-                            children=[
-                                html.H5(
-                                    "Comparison of total cases between countries",
-                                    id="bar-title",
-                                ),
-                                dcc.Graph(
-                                    id="right-graph",
-                                    figure=go.Figure(
-                                        data=[go.Bar(x=[1, 2, 3], y=[1, 3, 2])],
-                                        layout=go.Layout(
-                                            title=go.layout.Title(text="A Figure Specified By A Graph Object"),
-                                            plot_bgcolor="#23272c",
-                                            paper_bgcolor="#23272c",
-                                            font={
-                                                "color":"#a3a7b0"
-                                            }
-                                        )
-                                    ),
-                                ),
-                            ], className="six columns"
-                        ),
-                    ], style={"margin-top":"3%", "margin-bottom":"3%"}
-                ),
-                html.Div(
-                    id="footer",
-                    children=[
-                        html.Div(
-                            id="footer-message-1",
-                            children=[
-                                html.H2(
-                                    "#StayHome"
-                                ),
-                            ], style={"text-align":"center", "margin-top":"3%", "margin-bottom":"3%"}, className="six columns"
-                        ),
-                        html.Div(
-                            id="footer-message-2",
-                            children=[
-                                html.H2(
-                                    "#StaySafe"
-                                ),
-                            ], style={"text-align":"center", "margin-top":"3%", "margin-bottom":"3%"}, className="six columns"
-                        ),
-                    ],
-                ),
-            ], style={"margin":"3% 5%"}
+                                    id="choropleth-graph",
+                                    figure=px.scatter_geo(api.get_data_df(type_data=api.CONFIRMED), 
+                                        animation_frame="date",
+                                        animation_group="country",
+                                        hover_name="country",
+                                        custom_data=["date"],
+                                        locations="iso_alpha",
+                                        projection="natural earth",
+                                        size="cases"
+                                    )
+                                )
+                            ]
+                        )
+                    ]
+                )
+            ]
         ),
-    ],
+        html.Div(
+            className="row",
+            children=[
+                html.Div(
+                    className="col-6 col-sm-6",
+                    children=[
+                        dbc.Card(
+                            dbc.CardBody([
+                                dcc.Graph(
+                                    id="line-graph",
+                                    figure=px.line(
+                                        data_frame=df2,
+                                        title="Country's Trend"
+                                    )
+                                )
+                            ])
+                        )
+                    ]
+                ),
+                html.Div(
+                    className="col-6 col-sm-6",
+                    children=[
+                        dbc.Card(
+                            dbc.CardBody([
+                                html.H4("Test", className="card-title")
+                            ])
+                        )
+                    ]
+                )
+            ]
+        ),
+        html.Div(
+            className="row",
+            children=[
+                html.Div(
+                    className="col-6 col-sm-6",
+                    children=[
+                        html.H2("#StayHome", className="text-center")
+                    ]
+                ),
+                html.Div(
+                    className="col-6 col-sm-6",
+                    children=[
+                        html.H2("#StaySafe", className="text-center")
+                    ]
+                )
+            ]
+        )
+    ]
 )
+
+
+#
+# CALLBACKS
+#
+@app.callback(
+    [
+        Output('line-graph', 'figure')
+    ],
+    [
+        Input('choropleth-graph', 'clickData')
+    ]
+)
+def handle_choropleth_click(clickData):
+    # Get clickData
+    data = {
+        "name": clickData['points'][0]['hovertext'],
+        "code": clickData['points'][0]['location'],
+        "cases": clickData['points'][0]['marker.size'],
+        "date": clickData['points'][0]['customdata'][0]
+    }
+    print(data)
+    df=api.get_data_df(type_data=api.CONFIRMED)
+    print(df.head())
+
+    # Filter DF for line chart
+    line_df = df.loc[(df['country'] == data['name']) & (df['date'] <= data['date'])]
+
+    line_title = data['name'] + "'s trend of COVID-19 until " + data['date']
+    line_fig = px.line(
+        data_frame=line_df,
+        x='date',
+        y='cases',
+        hover_name='cases',
+        animation_frame=line_df['date'],
+        title=line_title
+    )
+    
+    return line_fig
 
 
 if __name__ == '__main__':

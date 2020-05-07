@@ -1,5 +1,6 @@
 # Libraries
 import pandas as pd
+import pycountry
 
 class CovidApi:
 	# Constants
@@ -31,7 +32,18 @@ class CovidApi:
 		# Group by country (some countries are divided by region)
 		df = df.groupby(['Country/Region']).sum()
 
-		self.dfs[type_data] = df
+		df_data = []
+
+		for index, rows in df.iterrows():
+			for date, num in rows.items():
+				df_data.append({
+          'country': index,
+          'iso_alpha': self.get_country_code(index),
+          'date': date,
+          'cases': num
+	      })
+
+		self.dfs[type_data] = pd.DataFrame(df_data)
 
 	def get_data_df(self, type_data):
 		return self.dfs[type_data]
@@ -41,4 +53,11 @@ class CovidApi:
 
 	def print_data_head(self, type_data):
 		print(self.dfs[type_data].head())
+
+	# UTILS
+	def get_country_code(self, name):
+		for co in list(pycountry.countries):
+			if name in co.name:
+				return co.alpha_3
+		return None
 
