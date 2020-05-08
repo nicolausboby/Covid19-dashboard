@@ -21,12 +21,6 @@ from api_covid import CovidApi
 
 external_stylesheets = [dbc.themes.BOOTSTRAP]
 
-# Placeholder and constant TODO
-TIME_PLACEHOLDER = [
-    datetime(2019, 10, 12),
-    datetime(2020, 4, 25),
-]
-
 #
 # MAIN APP
 #
@@ -57,8 +51,44 @@ api.fetch_data(type_data=api.CONFIRMED)
 api.fetch_data(type_data=api.DEATHS)
 api.fetch_data(type_data=api.RECOVERED)
 
-df2 = pd.DataFrame(np.random.randint(0,100,size=(100, 4)), columns=list('ABCD'))
 
+#
+# FIGURES
+#
+latest_date = api.dfs[api.CONFIRMED]['date'].unique()[-1]
+
+# Initial line figures (world's trend)
+line_fig_init = go.Figure(layout=dict(title=dict(text=("World's COVID-19 case trend until " + latest_date))))
+df_confirmed_init = api.dfs[api.CONFIRMED].groupby('date').sum().reset_index()
+df_deaths_init = api.dfs[api.DEATHS].groupby('date').sum().reset_index()
+df_recovered_init = api.dfs[api.RECOVERED].groupby('date').sum().reset_index()
+
+line_fig_init.add_trace(go.Scatter(
+    x=df_confirmed_init['date'],
+    y=df_confirmed_init['confirmed'],
+    mode='lines+markers',
+    name='Confirmed'
+))
+line_fig_init.add_trace(go.Scatter(
+    x=df_deaths_init['date'],
+    y=df_deaths_init['deaths'],
+    mode='lines+markers',
+    name='Deaths'
+))
+line_fig_init.add_trace(go.Scatter(
+    x=df_recovered_init['date'],
+    y=df_recovered_init['recovered'],
+    mode='lines+markers',
+    name='Recovered'
+))
+
+# Initial pie figures (percentage per continent)
+pie_fig_init = px.pie(
+    data_frame=api.dfs[api.CONFIRMED].loc[api.dfs[api.CONFIRMED]['date'] == latest_date].groupby('continent').sum().reset_index(),
+    names="continent",
+    values="confirmed",
+    title=("World's COVID-19 case percentages on " + latest_date)
+)
 
 #
 # LAYOUT
@@ -107,10 +137,11 @@ app.layout = html.Div(
                                         animation_frame="date",
                                         animation_group="country",
                                         hover_name="country",
+                                        color="continent",
                                         custom_data=["date"],
-                                        locations="iso_alpha",
+                                        locations="iso_alpha3",
                                         projection="natural earth",
-                                        size="cases"
+                                        size="confirmed",
                                     )
                                 )
                             ]
@@ -123,27 +154,28 @@ app.layout = html.Div(
             className="row",
             children=[
                 html.Div(
-                    className="col-6 col-sm-6",
+                    className="col-12 col-sm-12",
                     children=[
                         dbc.Card(
                             dbc.CardBody([
                                 dcc.Graph(
                                     id="line-graph",
-                                    figure=px.line(
-                                        data_frame=df2,
-                                        title="Country's Trend"
-                                    )
+                                    figure=line_fig_init
                                 )
                             ])
-                        )
+                        ),
+
                     ]
                 ),
                 html.Div(
-                    className="col-6 col-sm-6",
+                    className="col-12 col-sm-12",
                     children=[
                         dbc.Card(
                             dbc.CardBody([
-                                html.H4("Test", className="card-title")
+                                dcc.Graph(
+                                    id="pie-graph",
+                                    figure=pie_fig_init
+                                )
                             ])
                         )
                     ]
@@ -170,13 +202,20 @@ app.layout = html.Div(
     ]
 )
 
+#
+# Functions
+#
+def filter_by_country_date(df, click_data):
+    return df.loc[(df['country'] == click_data['name']) & (df['date'] <= click_data['date'])]
+
 
 #
 # CALLBACKS
 #
 @app.callback(
     [
-        Output('line-graph', 'figure')
+        Output('line-graph', 'figure'),
+        Output('pie-graph', 'figure')
     ],
     [
         Input('choropleth-graph', 'clickData')
@@ -187,27 +226,62 @@ def handle_choropleth_click(clickData):
     data = {
         "name": clickData['points'][0]['hovertext'],
         "code": clickData['points'][0]['location'],
-        "cases": clickData['points'][0]['marker.size'],
+        "confirmed": clickData['points'][0]['marker.size'],
         "date": clickData['points'][0]['customdata'][0]
     }
-    print(data)
-    df=api.get_data_df(type_data=api.CONFIRMED)
-    print(df.head())
 
-    # Filter DF for line chart
-    line_df = df.loc[(df['country'] == data['name']) & (df['date'] <= data['date'])]
+    # Process DF
+    df_confirmed_all = api.get_data_df(type_data=api.CONFIRMED)
+    df_confirmed_filtered = filter_by_country_date(df_confirmed_all, data)
+    df_deaths_all = api.get_data_df(type_data=api.DEATHS)
+    df_deaths_filtered = filter_by_country_date(df_deaths_all, data)
+    df_recovered_all = api.get_data_df(type_data=api.RECOVERED)
+    df_recovered_filtered = filter_by_country_date(df_recovered_all, data)
 
-    line_title = data['name'] + "'s trend of COVID-19 until " + data['date']
-    line_fig = px.line(
-        data_frame=line_df,
-        x='date',
-        y='cases',
-        hover_name='cases',
-        animation_frame=line_df['date'],
-        title=line_title
+    # Update line chart
+    line_title = data['name'] + "'s COVID-19 trend until " + data['date']
+    line_fig = go.Figure(layout=dict(title=dict(text=line_title)))
+    line_fig.add_trace(go.Scatter(
+        x=df_confirmed_filtered['date'],
+        y=df_confirmed_filtered['confirmed'],
+        mode='lines+markers',
+        name='Confirmed'
+    ))
+    line_fig.add_trace(go.Scatter(
+        x=df_deaths_filtered['date'],
+        y=df_deaths_filtered['deaths'],
+        mode='lines+markers',
+        name='Deaths'
+    ))
+    line_fig.add_trace(go.Scatter(
+        x=df_recovered_filtered['date'],
+        y=df_recovered_filtered['recovered'],
+        mode='lines+markers',
+        name='Recovered'
+    ))
+
+    # Update pie chart
+    country_confirmed_cases = df_confirmed_filtered.loc[df_confirmed_filtered['date'] == data['date'], 'confirmed'].tolist()[0]
+    total_confirmed_cases = df_confirmed_all.loc[df_confirmed_all['date'] == data['date']]['confirmed'].sum()
+    pie_df = pd.DataFrame([
+        {
+            "Country": data['name'],
+            "Confirmed": country_confirmed_cases
+        },
+        {
+            "Country": "Others",
+            "Confirmed": total_confirmed_cases
+        }
+    ])
+    pie_title = "Percentage of " + data['name'] + "'s confirmed cases compared to the world on " + data['date']
+    pie_fig = px.pie(
+        data_frame=pie_df,
+        names="Country",
+        values="Confirmed",
+        title=pie_title
     )
-    
-    return line_fig
+
+    return [line_fig, pie_fig]
 
 
 if __name__ == '__main__':
