@@ -223,6 +223,9 @@ def filter_by_country_date(df, click_data):
 )
 def handle_choropleth_click(clickData):
     # Get clickData
+    if clickData is None:
+        return [line_fig_init,pie_fig_init]
+
     data = {
         "name": clickData['points'][0]['hovertext'],
         "code": clickData['points'][0]['location'],
