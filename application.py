@@ -17,7 +17,7 @@ import numpy as np
 from datetime import datetime
 
 # Self-made
-from api_covid import CovidApi
+from api.api_covid import CovidApi
 
 external_stylesheets = [dbc.themes.BOOTSTRAP]
 
