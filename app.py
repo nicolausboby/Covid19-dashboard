@@ -35,6 +35,7 @@ app = dash.Dash(
 )
 
 server = app.server
+app.title = "COVID-19 Tracker"
 
 #
 # CONSTANTS
