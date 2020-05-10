@@ -80,6 +80,7 @@ pie_layout = go.Layout(
 )
 
 
+
 #
 # FIGURES
 #
@@ -120,6 +121,41 @@ pie_fig_init = go.Figure(
     ],
     layout=pie_layout,
 )
+
+# Scatter geo figure
+geo_figure=px.scatter_geo(
+    api.get_data_df(type_data=api.CONFIRMED), 
+    animation_frame="date",
+    animation_group="country",
+    hover_name="country",
+    color="continent",
+    custom_data=["date"],
+    locations="iso_alpha3",
+    projection="natural earth",
+    size="confirmed",
+)
+geo_figure.update_geos(
+    resolution=50,
+    showcoastlines=True,
+    showland=True, landcolor='rgb(217,217,217)',
+    showocean=True, oceancolor="rgb(35,39,44)",
+    showlakes=False,
+    showrivers=False,
+    showcountries=True, countrycolor="Black",
+    projection_type='equirectangular',
+)
+
+geo_figure.update_layout(
+    margin={
+        "r":0,"t":0,"l":0,"b":0
+    },
+    plot_bgcolor='rgb(35,39,44)',
+    paper_bgcolor='rgba(0,0,0,0)',
+    font=dict(
+        color="#a3a7b0",
+    )
+)
+
 
 #
 # LAYOUT
@@ -165,16 +201,7 @@ app.layout = html.Div(
                                 ),
                                 dcc.Graph(
                                     id="choropleth-graph",
-                                    figure=px.scatter_geo(api.get_data_df(type_data=api.CONFIRMED), 
-                                        animation_frame="date",
-                                        animation_group="country",
-                                        hover_name="country",
-                                        color="continent",
-                                        custom_data=["date"],
-                                        locations="iso_alpha3",
-                                        projection="natural earth",
-                                        size="confirmed",
-                                    )
+                                    figure=geo_figure,
                                 )
                             ]
                         )
