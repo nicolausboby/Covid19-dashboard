@@ -52,17 +52,43 @@ api.fetch_data(type_data=api.CONFIRMED)
 api.fetch_data(type_data=api.DEATHS)
 api.fetch_data(type_data=api.RECOVERED)
 
+latest_date = api.dfs[api.CONFIRMED]['date'].unique()[-1]
+df_confirmed_init = api.dfs[api.CONFIRMED].groupby('date').sum().reset_index()
+df_deaths_init = api.dfs[api.DEATHS].groupby('date').sum().reset_index()
+df_recovered_init = api.dfs[api.RECOVERED].groupby('date').sum().reset_index()
+data_pie = api.dfs[api.CONFIRMED].loc[api.dfs[api.CONFIRMED]['date'] == latest_date].groupby('continent').sum().reset_index()
+
+
+#
+# LAYOUTS
+# 
+line_layout = go.Layout(
+    plot_bgcolor='rgba(0,0,0,0)',
+    paper_bgcolor='rgba(0,0,0,0)',
+    title="World's COVID-19 case trend until " + latest_date,
+    font=dict(
+        color="#a3a7b0"
+    )
+)
+pie_layout = go.Layout(
+    plot_bgcolor='rgba(0,0,0,0)',
+    paper_bgcolor='rgba(0,0,0,0)',
+    title="World's COVID-19 case percentages on " + latest_date,
+    font=dict(
+        color="#a3a7b0"
+    )
+)
+
 
 #
 # FIGURES
 #
-latest_date = api.dfs[api.CONFIRMED]['date'].unique()[-1]
 
 # Initial line figures (world's trend)
-line_fig_init = go.Figure(layout=dict(title=dict(text=("World's COVID-19 case trend until " + latest_date))))
-df_confirmed_init = api.dfs[api.CONFIRMED].groupby('date').sum().reset_index()
-df_deaths_init = api.dfs[api.DEATHS].groupby('date').sum().reset_index()
-df_recovered_init = api.dfs[api.RECOVERED].groupby('date').sum().reset_index()
+line_fig_init = go.Figure(layout=line_layout)
+
+
+line_fig_init.update_layout(plot_bgcolor='#23272c', )
 
 line_fig_init.add_trace(go.Scatter(
     x=df_confirmed_init['date'],
@@ -83,12 +109,16 @@ line_fig_init.add_trace(go.Scatter(
     name='Recovered'
 ))
 
+
 # Initial pie figures (percentage per continent)
-pie_fig_init = px.pie(
-    data_frame=api.dfs[api.CONFIRMED].loc[api.dfs[api.CONFIRMED]['date'] == latest_date].groupby('continent').sum().reset_index(),
-    names="continent",
-    values="confirmed",
-    title=("World's COVID-19 case percentages on " + latest_date)
+pie_fig_init = go.Figure(
+    data=[
+        go.Pie(
+            labels=data_pie['continent'],
+            values=data_pie['confirmed']
+        )
+    ],
+    layout=pie_layout,
 )
 
 #
@@ -124,6 +154,7 @@ app.layout = html.Div(
                     children=[
                         html.Div(
                             id="choropleth-container",
+                            className="graph-container",
                             children=[
                                 html.H5(
                                     "Total confirmed COVID-19 cases across the world",
@@ -175,7 +206,7 @@ app.layout = html.Div(
                             dbc.CardBody([
                                 dcc.Graph(
                                     id="pie-graph",
-                                    figure=pie_fig_init
+                                    figure=pie_fig_init,
                                 )
                             ])
                         )
@@ -187,13 +218,13 @@ app.layout = html.Div(
             className="row",
             children=[
                 html.Div(
-                    className="col-6 col-sm-6",
+                    className="col-6 col-sm-6 dark-mode",
                     children=[
                         html.H2("#StayHome", className="text-center")
                     ]
                 ),
                 html.Div(
-                    className="col-6 col-sm-6",
+                    className="col-6 col-sm-6 dark-mode",
                     children=[
                         html.H2("#StaySafe", className="text-center")
                     ]
