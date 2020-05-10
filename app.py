@@ -70,6 +70,17 @@ line_layout = go.Layout(
         color="#a3a7b0"
     )
 )
+def update_line_layout(data):
+    new_line_layout = go.Layout(
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        title=data['name'] + "'s COVID-19 trend until " + data['date'],
+        font=dict(
+            color="#a3a7b0"
+        )
+    )
+    return new_line_layout 
+
 pie_layout = go.Layout(
     plot_bgcolor='rgba(0,0,0,0)',
     paper_bgcolor='rgba(0,0,0,0)',
@@ -78,6 +89,16 @@ pie_layout = go.Layout(
         color="#a3a7b0"
     )
 )
+def update_pie_layout(data):
+    new_pie_layout = go.Layout(
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='rgba(0,0,0,0)',
+        title="Percentage of " + data['name'] + "'s confirmed cases compared to the world on " + data['date'],
+        font=dict(
+            color="#a3a7b0"
+        )
+    )
+    return new_pie_layout
 
 
 
@@ -301,8 +322,8 @@ def handle_choropleth_click(clickData):
     df_recovered_filtered = filter_by_country_date(df_recovered_all, data)
 
     # Update line chart
-    line_title = data['name'] + "'s COVID-19 trend until " + data['date']
-    line_fig = go.Figure(layout=dict(title=dict(text=line_title)))
+    new_line_layout = update_line_layout(data)
+    line_fig = go.Figure(layout=new_line_layout)
     line_fig.add_trace(go.Scatter(
         x=df_confirmed_filtered['date'],
         y=df_confirmed_filtered['confirmed'],
@@ -336,11 +357,19 @@ def handle_choropleth_click(clickData):
         }
     ])
     pie_title = "Percentage of " + data['name'] + "'s confirmed cases compared to the world on " + data['date']
-    pie_fig = px.pie(
-        data_frame=pie_df,
-        names="Country",
-        values="Confirmed",
-        title=pie_title
+    new_pie_layout = update_pie_layout(data)
+    pie_fig = go.Figure(
+        data=[
+            go.Pie(
+                labels=pie_df['Country'],
+                values=pie_df['Confirmed']
+            ),
+        ],
+        layout=new_pie_layout
+        # data_frame=pie_df,
+        # names="Country",
+        # values="Confirmed",
+        # title=pie_title
     )
 
     return [line_fig, pie_fig]
